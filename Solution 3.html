@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cafes and Places</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        #cafesTable {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        #cafesTable th, #cafesTable td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        #searchInput {
+            width: 100%; /* Adjust the width as needed */
+            padding: 8px;
+            margin: 10px auto;
+            box-sizing: border-box;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+    // Fetch cafes data from the API
+    fetch('https://raw.githubusercontent.com/debojyoti/places-fake-rest-api/master/cafes.json')
+        .then(response => response.json())
+        .then(data => {
+            if (!data.error) {
+                // Fetch places data from the new API
+                fetch('https://raw.githubusercontent.com/debojyoti/places-fake-rest-api/master/places.json')
+                    .then(response => response.json())
+                    .then(placesData => {
+                        if (!placesData.error) {
+                            // Process and display cafes data with additional fields
+                            displayCafes(data.cafes, placesData.places);
+                        } else {
+                            console.error('Error fetching places data from the API');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching places data:', error);
+                    });
+            } else {
+                console.error('Error fetching cafes data from the API');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching cafes data:', error);
+        });
+
+    // Handle search input changes
+    const searchInput = document.getElementById('searchInput');
+    searchInput.addEventListener('input', function () {
+        const searchTerm = searchInput.value.trim().toLowerCase();
+        filterCafes(searchTerm);
+    });
+});
+
+function displayCafes(cafes, places) {
+    const cafesList = document.getElementById('cafesList');
+
+    // Create HTML elements for each cafe with additional fields
+    cafes.forEach(cafe => {
+        // Find the corresponding place data using the cafe's location_id
+        const placeData = places.find(place => place.id === cafe.location_id);
+
+        const cafeElement = document.createElement('tr');
+        cafeElement.innerHTML = `
+            <td>${cafe.name}</td>
+            <td>${cafe.location_id}</td>
+            <td>${placeData.street_no}</td>
+            <td>${placeData.locality}</td>
+            <td>${placeData.postal_code}</td>
+            <td>${placeData.lat}</td>
+            <td>${placeData.long}</td>
+        `;
+        cafesList.appendChild(cafeElement);
+    });
+}
+
+function filterCafes(searchTerm) {
+    const cafesTable = document.getElementById('cafesTable');
+    const cafesList = document.getElementById('cafesList');
+    const rows = cafesList.getElementsByTagName('tr');
+
+    // Filter cafes based on the search term
+    for (let i = 0; i < rows.length; i++) {
+        const name = rows[i].getElementsByTagName('td')[0];
+        if (name) {
+            const cafeName = name.textContent || name.innerText;
+            const display = cafeName.toLowerCase().includes(searchTerm);
+            rows[i].style.display = display ? '' : 'none';
+        }
+    }
+
+    // Show/hide the table based on search results
+    cafesTable.style.display = (searchTerm === '' || rows.length === 0) ? 'none' : '';
+}
+    </script>
+</head>
+<body>
+    <h1>Café Search</h1>
+    <input type="text" id="searchInput" placeholder="Search for cafes by name">
+    <table id="cafesTable">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Location ID</th>
+                <th>Street No</th>
+                <th>Locality</th>
+                <th>Postal Code</th>
+                <th>Latitude</th>
+                <th>Longitude</th>
+            </tr>
+        </thead>
+        <tbody id="cafesList"></tbody>
+    </table>
+</body>
+</html>
